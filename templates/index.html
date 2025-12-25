@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberPAW - Link Scanner</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1437 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            overflow-x: hidden;
+        }
+        .container { text-align: center; max-width: 600px; padding: 20px; }
+
+        /* Logo */
+        .logo {
+            position: absolute; top: 20px; left: 20px;
+            display: flex; align-items: center; gap: 10px; z-index: 100;
+        }
+        .logo-icon { width: 50px; height: 50px; filter: drop-shadow(0 0 10px rgba(168, 85, 247, 0.5)); }
+        .logo-text {
+            font-size: 24px; font-weight: bold;
+            background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* CyberCat SVG Container */
+        .cat-container { position: relative; margin-bottom: 30px; height: 300px; display: flex; justify-content: center; align-items: center; }
+        .cyber-cat { width: 250px; height: 250px; filter: drop-shadow(0 0 20px rgba(168, 85, 247, 0.4)); transition: all 0.3s ease; }
+        .cyber-cat:hover { transform: scale(1.05); filter: drop-shadow(0 0 30px rgba(168, 85, 247, 0.6)); cursor: pointer; }
+
+        /* Animations */
+        @keyframes wave { 0%,100%{transform:rotate(0deg);}25%{transform:rotate(15deg);}75%{transform:rotate(-15deg);} }
+        @keyframes tailSway { 0%,100%{transform:rotate(-10deg);}50%{transform:rotate(10deg);} }
+        @keyframes thinking {0%,100%{opacity:1;}50%{opacity:0.5;}}
+        @keyframes glow {0%,100%{filter: drop-shadow(0 0 20px rgba(168,85,247,0.4));}50%{filter: drop-shadow(0 0 35px rgba(236,72,153,0.6));}}
+        @keyframes blink { 0%, 90%, 100% { transform: scaleY(1); } 95% { transform: scaleY(0.1); } }
+
+        .wave-animation {animation: wave 2s ease-in-out infinite; transform-origin: bottom center;}
+        .tail-sway {animation: tailSway 3s ease-in-out infinite; transform-origin: top right;}
+        .thinking {animation: thinking 1.5s ease-in-out infinite;}
+        .cat-glow {animation: glow 2s ease-in-out infinite;}
+        .blink { animation: blink 0.25s ease-in-out; transform-origin: center; }
+
+        /* Speech Bubble */
+        .speech-bubble {
+            position: relative;
+            background: rgba(26,20,55,0.9);
+            border: 2px solid #a855f7;
+            border-radius: 20px;
+            padding: 20px 25px;
+            margin: 20px auto;
+            max-width: 400px;
+            box-shadow: 0 0 20px rgba(168,85,247,0.3);
+            animation: fadeIn 0.5s ease;
+        }
+        .speech-bubble::before {
+            content: '';
+            position: absolute;
+            top: -20px; left: 50%;
+            transform: translateX(-50%);
+            width: 0; height: 0;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-bottom: 20px solid #a855f7;
+        }
+        .speech-bubble::after {
+            content: '';
+            position: absolute;
+            top: -16px; left: 50%;
+            transform: translateX(-50%);
+            width: 0; height: 0;
+            border-left: 13px solid transparent;
+            border-right: 13px solid transparent;
+            border-bottom: 18px solid rgba(26,20,55,0.9);
+        }
+        @keyframes fadeIn {from{opacity:0; transform:translateY(-10px);} to{opacity:1; transform:translateY(0);}}
+
+        /* Input Section */
+        .input-section { margin:30px 0; }
+        .input-field {
+            width:100%; padding:15px 20px;
+            background: rgba(26,20,55,0.6);
+            border:2px solid #4c1d95;
+            border-radius:12px;
+            color:white; font-size:16px; transition: all 0.3s ease;
+            margin-bottom:15px;
+        }
+        .input-field:focus { outline:none; border-color:#a855f7; box-shadow:0 0 20px rgba(168,85,247,0.3); background: rgba(26,20,55,0.8);}
+        .input-field::placeholder { color: rgba(255,255,255,0.5); }
+        .scan-button {
+            width:100%; padding:15px 30px;
+            background: linear-gradient(135deg,#a855f7 0%,#ec4899 100%);
+            border:none; border-radius:12px; color:white; font-size:18px; font-weight:bold;
+            cursor:pointer; transition: all 0.3s ease; box-shadow:0 4px 15px rgba(168,85,247,0.4);
+        }
+        .scan-button:hover { transform: translateY(-2px); box-shadow:0 6px 20px rgba(168,85,247,0.6);}
+        .scan-button:active { transform: translateY(0);}
+        .scan-button:disabled { opacity:0.6; cursor:not-allowed;}
+
+        /* Result Card */
+        .result-card { margin-top:30px; padding:25px; border-radius:15px; animation:fadeIn 0.5s ease; display:none; }
+        .result-card.safe { background: rgba(34,197,94,0.1); border:2px solid #22c55e; box-shadow:0 0 20px rgba(34,197,94,0.2);}
+        .result-card.suspicious { background: rgba(251,191,36,0.1); border:2px solid #fbbf24; box-shadow:0 0 20px rgba(251,191,36,0.2);}
+        .result-card.dangerous { background: rgba(239,68,68,0.1); border:2px solid #ef4444; box-shadow:0 0 20px rgba(239,68,68,0.2);}
+        .result-card h3 { margin-bottom:10px; font-size:24px; }
+        .result-card.safe h3 { color:#22c55e;}
+        .result-card.suspicious h3 { color:#fbbf24;}
+        .result-card.dangerous h3 { color:#ef4444;}
+
+        /* Cat Reaction colors */
+        .safe-cat { filter: drop-shadow(0 0 25px #22c55e); }
+        .suspicious-cat { filter: drop-shadow(0 0 25px #fbbf24); }
+        .dangerous-cat { filter: drop-shadow(0 0 30px #ef4444); }
+    </style>
+</head>
+<body>
+    <!-- Logo -->
+    <div class="logo">
+        <svg class="logo-icon" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="50" cy="50" r="35" fill="#7c3aed"/>
+            <circle cx="50" cy="50" r="28" fill="#a855f7"/>
+            <path d="M25 30 L18 10 L32 25 Z" fill="#7c3aed"/>
+            <path d="M75 30 L82 10 L68 25 Z" fill="#7c3aed"/>
+            <path d="M27 28 L22 15 L32 26 Z" fill="#ec4899"/>
+            <path d="M73 28 L78 15 L68 26 Z" fill="#ec4899"/>
+            <ellipse cx="40" cy="45" rx="5" ry="8" fill="white"/>
+            <ellipse cx="60" cy="45" rx="5" ry="8" fill="white"/>
+            <circle cx="40" cy="47" r="3" fill="#1a1437"/>
+            <circle cx="60" cy="47" r="3" fill="#1a1437"/>
+            <path d="M50 55 L47 58 L50 59 L53 58 Z" fill="#ec4899"/>
+            <line x1="30" y1="50" x2="15" y2="48" stroke="white" stroke-width="1.5"/>
+            <line x1="30" y1="54" x2="15" y2="54" stroke="white" stroke-width="1.5"/>
+            <line x1="70" y1="50" x2="85" y2="48" stroke="white" stroke-width="1.5"/>
+            <line x1="70" y1="54" x2="85" y2="54" stroke="white" stroke-width="1.5"/>
+        </svg>
+        <div class="logo-text">CyberPAW</div>
+    </div>
+
+    <!-- CyberCat -->
+    <div class="container">
+        <div class="cat-container">
+            <svg class="cyber-cat" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                <!-- Tail -->
+                <g id="tail" class="tail-sway">
+                    <path d="M160 120 Q180 100 185 70" stroke="#a855f7" stroke-width="8" fill="none" stroke-linecap="round"/>
+                    <circle cx="185" cy="70" r="6" fill="#ec4899"/>
+                </g>
+                <!-- Body -->
+                <ellipse cx="100" cy="130" rx="45" ry="55" fill="#7c3aed"/>
+                <ellipse cx="100" cy="130" rx="35" ry="45" fill="#a855f7"/>
+                <!-- Head -->
+                <circle cx="100" cy="70" r="45" fill="#7c3aed"/>
+                <circle cx="100" cy="70" r="38" fill="#a855f7"/>
+                <!-- Ears -->
+                <path d="M65 45 L55 15 L75 35 Z" fill="#7c3aed"/>
+                <path d="M135 45 L145 15 L125 35 Z" fill="#7c3aed"/>
+                <path d="M68 42 L62 22 L75 38 Z" fill="#ec4899"/>
+                <path d="M132 42 L138 22 L125 38 Z" fill="#ec4899"/>
+                <!-- Eyes -->
+                <g id="eyes">
+                    <ellipse cx="85" cy="65" rx="8" ry="12" fill="white"/>
+                    <ellipse cx="115" cy="65" rx="8" ry="12" fill="white"/>
+                    <circle cx="85" cy="68" r="5" fill="#1a1437"/>
+                    <circle cx="115" cy="68" r="5" fill="#1a1437"/>
+                    <circle cx="87" cy="66" r="2" fill="white"/>
+                    <circle cx="117" cy="66" r="2" fill="white"/>
+                </g>
+                <!-- Nose -->
+                <path d="M100 80 L95 85 L100 87 L105 85 Z" fill="#ec4899"/>
+                <!-- Mouth -->
+                <path d="M100 87 Q95 92 90 90" stroke="#1a1437" stroke-width="2" fill="none" stroke-linecap="round"/>
+                <path d="M100 87 Q105 92 110 90" stroke="#1a1437" stroke-width="2" fill="none" stroke-linecap="round"/>
+                <!-- Whiskers -->
+                <line x1="60" y1="75" x2="30" y2="70" stroke="white" stroke-width="2"/>
+                <line x1="60" y1="80" x2="30" y2="82" stroke="white" stroke-width="2"/>
+                <line x1="140" y1="75" x2="170" y2="70" stroke="white" stroke-width="2"/>
+                <line x1="140" y1="80" x2="170" y2="82" stroke="white" stroke-width="2"/>
+                <!-- Paw -->
+                <g id="paw" class="wave-animation">
+                    <ellipse cx="60" cy="140" rx="12" ry="18" fill="#7c3aed"/>
+                    <ellipse cx="60" cy="140" rx="8" ry="14" fill="#a855f7"/>
+                    <circle cx="57" cy="135" r="3" fill="#ec4899"/>
+                    <circle cx="63" cy="135" r="3" fill="#ec4899"/>
+                    <circle cx="60" cy="130" r="3" fill="#ec4899"/>
+                </g>
+            </svg>
+        </div>
+
+        <!-- Speech Bubble -->
+        <div class="speech-bubble" id="speechBubble">
+            <p id="catMessage">Hi! I'm CyberPaw 🐾<br>Paste a link and I'll sniff it for you!</p>
+        </div>
+
+        <!-- Input Section -->
+        <div class="input-section">
+            <input type="text" class="input-field" id="linkInput" placeholder="Paste suspicious link here...">
+            <button class="scan-button" id="scanButton">Scan Link</button>
+        </div>
+
+        <!-- Result Card -->
+        <div class="result-card" id="resultCard">
+            <h3 id="resultTitle">Result</h3>
+            <p id="resultMessage">Details will appear here</p>
+        </div>
+    </div>
+
+    <script>
+        const catMessage = document.getElementById('catMessage');
+        const linkInput = document.getElementById('linkInput');
+        const scanButton = document.getElementById('scanButton');
+        const resultCard = document.getElementById('resultCard');
+        const resultTitle = document.getElementById('resultTitle');
+        const resultMessage = document.getElementById('resultMessage');
+        const paw = document.getElementById('paw');
+        const tail = document.getElementById('tail');
+        const eyes = document.getElementById('eyes');
+        const cat = document.querySelector('.cyber-cat');
+
+        // Eye blink when typing
+        linkInput.addEventListener('input', () => {
+            eyes.classList.add('blink');
+            setTimeout(() => eyes.classList.remove('blink'), 250);
+        });
+
+        linkInput.addEventListener('focus', () => {
+            catMessage.innerHTML = "Good! Now paste that suspicious link! 🐾";
+        });
+
+        scanButton.addEventListener('click', () => {
+            const link = linkInput.value.trim();
+            if (!link) {
+                catMessage.innerHTML = "Meow! I need a link to scan first! 🐾";
+                return;
+            }
+
+            scanButton.disabled = true;
+            scanButton.textContent = 'Scanning...';
+            resultCard.style.display = 'none';
+            catMessage.innerHTML = "Sniffing for danger... 🔍";
+
+            fetch('/scan', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ link })
+            })
+            .then(res => res.json())
+            .then(data => {
+                scanButton.disabled = false;
+                scanButton.textContent = 'Scan Link';
+                catMessage.innerHTML = data.message;
+
+                resultCard.className = 'result-card ' + data.type;
+                resultCard.style.display = 'block';
+
+                // Reset cat colors
+                cat.classList.remove('safe-cat', 'suspicious-cat', 'dangerous-cat');
+
+                if (data.type === 'safe') {
+                    resultTitle.textContent = '✓ Safe Link';
+                    resultMessage.textContent = 'This link appears to be safe based on initial analysis.';
+                    paw.classList.add('wave-animation');
+                    tail.classList.add('tail-sway');
+                    cat.classList.add('safe-cat');
+
+                } else if (data.type === 'suspicious') {
+                    resultTitle.textContent = '⚠ Suspicious Link';
+                    resultMessage.textContent = 'This link has some concerning characteristics.';
+                    cat.classList.add('suspicious-cat');
+
+                } else {
+                    resultTitle.textContent = '✕ Dangerous Link';
+                    resultMessage.textContent = 'This link is potentially malicious. Do not click it!';
+                    cat.classList.add('dangerous-cat');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                catMessage.innerHTML = "Oops! Something went wrong. 🐾";
+                scanButton.disabled = false;
+                scanButton.textContent = 'Scan Link';
+            });
+        });
+    </script>
+</body>
+</html>
